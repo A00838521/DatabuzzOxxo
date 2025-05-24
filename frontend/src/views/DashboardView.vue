@@ -74,6 +74,17 @@
           <BarChart :chartData="dailyDistributionData" />
         </div>
       </div>
+      
+      <!-- Store Location Predictor Section -->
+      <div class="predictor-section">
+        <div class="section-header">
+          <h2>Predictor de Ubicación de Tiendas</h2>
+          <p class="section-description">
+            Utiliza nuestro modelo predictivo para evaluar nuevas ubicaciones potenciales para tiendas OXXO.
+          </p>
+        </div>
+        <StoreLocationPredictor />
+      </div>
     </template>
   </div>
 </template>
@@ -84,6 +95,7 @@ import { dashboardApi, type SalesData, type StoreMetrics } from '../services/api
 import MetricCard from '../components/MetricCard.vue';
 import LineChart from '../components/charts/LineChart.vue';
 import BarChart from '../components/charts/BarChart.vue';
+import StoreLocationPredictor from '../components/StoreLocationPredictor.vue';
 import type { ChartData } from '../types/dashboard';
 
 // State
@@ -315,6 +327,30 @@ onMounted(fetchData);
 
 .chart-container.wide {
   grid-column: span 2;
+}
+
+.predictor-section {
+  margin-top: 40px;
+  border-top: 1px solid #e2e8f0;
+  padding-top: 32px;
+}
+
+.section-header {
+  margin-bottom: 24px;
+}
+
+.section-header h2 {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--color-heading);
+  margin-bottom: 8px;
+}
+
+.section-description {
+  color: var(--color-text-secondary);
+  font-size: 14px;
+  line-height: 1.5;
+  margin: 0;
 }
 
 .loading-state {

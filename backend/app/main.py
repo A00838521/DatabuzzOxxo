@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api.routes import health, sales
+from app.api.routes import health, sales, location
 
 app = FastAPI(
     title="DatabuzzOxxo API",
@@ -21,6 +21,7 @@ app.add_middleware(
 # Include routers
 app.include_router(health.router, prefix="/api", tags=["health"])
 app.include_router(sales.router, prefix="/api", tags=["sales"])
+app.include_router(location.router, prefix="/api", tags=["location"])
 
 @app.get("/")
 async def root():
