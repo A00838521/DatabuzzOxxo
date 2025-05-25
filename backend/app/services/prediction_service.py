@@ -56,17 +56,24 @@ class PredictionService:
         os.makedirs(self.model_dir, exist_ok=True)
         
         # Path to trained model file
-        self.model_path = os.path.join(self.model_dir, 'store_location_model.pkl')
-        self.scaler_path = os.path.join(self.model_dir, 'feature_scaler.pkl')
+        self.model_path = os.path.join(self.model_dir, 'modelo_oxxo_clasificador.pkl')
         
         # Initialize model and scaler
         self.model = None
-        self.scaler = None
+
+        self._load_model()
+
+    def _load_model(self):
+        import joblib
+        if os.path.exists(self.model_path):
+            self.model = joblib.load(self.model_path)
+        else:
+            raise FileNotFoundError("No se encontró el modelo de clasificación entrenado.")
         
-        # Try to load existing model or train a new one
-        self._load_or_train_model()
+        # # Try to load existing model or train a new one
+        # self._load_or_train_model()
         
-        logger.info("PredictionService initialized")
+        # logger.info("PredictionService initialized")
     
     def _load_or_train_model(self) -> None:
         """
@@ -140,74 +147,43 @@ class PredictionService:
             raise ValueError(f"Failed to train model: {str(e)}")
     
     def predict_location(self, location: StoreLocation) -> PredictionResponse:
-        """
-        Predict the performance of a store at the given location.
-        
-        Args:
-            location: Store location to evaluate
-            
-        Returns:
-            PredictionResponse with prediction results
-        """
-        try:
-            # Ensure model is loaded
-            if self.model is None or self.scaler is None:
-                self._load_or_train_model()
-            
-            # Convert location to features
-            X = self.data_service.store_location_to_features(location)
-            
-            # Scale features
-            X_scaled = self.scaler.transform(X)
-            
-            # Make prediction
-            performance_ratio = self.model.predict(X_scaled)[0]
-            
-            # Get sales target for this environment
-            sales_target = self.data_service.get_sales_target_for_environment(location.entorno)
-            
-            # Calculate expected sales
-            expected_sales = sales_target * performance_ratio if sales_target else 0
-            
-            # Calculate probability of success (simplified)
-            probability = self._calculate_success_probability(performance_ratio)
-            
-            # Calculate score (normalized between 0 and 1)
-            score = min(max(performance_ratio / 1.5, 0.0), 1.0)
-            
-            # Generate recommendation
-            recommendation = self._generate_recommendation(
-                score, 
-                expected_sales, 
-                probability, 
-                location
-            )
-            
-            # Create response
-            response = PredictionResponse(
-                score=score,
-                expectedSales=expected_sales,
-                probability=probability,
-                recommendation=recommendation
-            )
-            
-            # Log prediction
-            self.data_service.save_prediction_log(
-                location, 
-                {
-                    "score": score,
-                    "expectedSales": expected_sales,
-                    "probability": probability,
-                    "recommendation": recommendation,
-                    "performance_ratio": float(performance_ratio)
-                }
-            )
-            
-            return response
-            
-        except Exception as e:
-            logger.error(f"Error making prediction: {str(e)}")
-            raise ValueError(f"Failed to make prediction: {str(e)}")
+      try:
+          if self.model is None:
+              self._load_model()
+
+          # Construye el DataFrame de entrada con los nombres que espera tu pipeline
+          input_dict = {
+              "MTS2VENTAS_NUM": location.mts2Ventas,
+              "LATITUD_NUM": location.latitud,
+              "LONGITUD_NUM": location.longitud,
+              "Meta_venta": self.data_service.get_sales_target_for_environment(location.entorno),
+              "NIVELSOCIOECONOMICO_DES": location.nivelSocioeconomico,
+              "ENTORNO_DES": location.entorno,
+              "SEGMENTO_MAESTRO_DESC": location.segmentoMaestro,
+              "LID_UBICACION_TIENDA": getattr(location, "tiendaId", 0) or 0
+          }
+          input_df = pd.DataFrame([input_dict])
+
+          # Predicción
+          pred = self.model.predict(input_df)[0]
+          proba = self.model.predict_proba(input_df)[0, 1]
+
+          # Arma la respuesta
+          resultado = "Cumplirá" if pred == 1 else "No cumplirá"
+          recommendation = (
+              f"Probabilidad de cumplir meta: {proba:.1%}. "
+              f"Resultado: {resultado}."
+          )
+
+          return PredictionResponse(
+              score=proba,  # Puedes usar proba como score
+              expectedSales=input_dict["Meta_venta"] if pred == 1 else 0,
+              probability=proba,
+              recommendation=recommendation
+          )
+      except Exception as e:
+          logger.error(f"Error en predicción: {str(e)}")
+          raise ValueError(f"Error en predicción: {str(e)}")
     
     def _calculate_success_probability(self, performance_ratio: float) -> float:
         """
