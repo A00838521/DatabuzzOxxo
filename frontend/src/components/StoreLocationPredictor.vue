@@ -5,6 +5,16 @@
         <form @submit.prevent="predictLocation">
           <div class="form-grid">
             <div class="form-group">
+              <label for="latitud">Latitud</label>
+              <input 
+                type="number" 
+                id="latitud" 
+                v-model.number="storeData.latitud" 
+                step="0.00001" 
+                required
+              />
+            </div>
+            <div class="form-group">
               <label for="longitud">Longitud</label>
               <input 
                 type="number" 
@@ -22,10 +32,11 @@
                 v-model="storeData.segmentoMaestro" 
                 required
               >
+                <option value="Barrio Competido">Barrio Competido</option>
+                <option value="Clásico">Clásico</option>
                 <option value="Hogar Reunión">Hogar Reunión</option>
-                <option value="Trabajo Reunión">Trabajo Reunión</option>
-                <option value="Tránsito">Tránsito</option>
-                <option value="Estación">Estación</option>
+                <option value="Oficinistas">Oficinistas</option>
+                <option value="Parada Técnica">Parada Técnica</option>
               </select>
             </div>
           </div>
