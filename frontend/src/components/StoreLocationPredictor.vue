@@ -1,6 +1,19 @@
 <template>
   <div class="store-location-predictor">
     <div class="predictor-container">
+      <!-- Mapa interactivo -->
+      <div class="map-container">
+        <l-map
+          style="height: 300px; width: 100%;"
+          :zoom="mapZoom"
+          :center="[storeData.latitud, storeData.longitud]"
+          @click="onMapClick"
+        >
+          <l-tile-layer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+          <l-marker :lat-lng="[storeData.latitud, storeData.longitud]" />
+        </l-map>
+      </div>
+
       <div class="form-container">
         <form @submit.prevent="predictLocation">
           <div class="form-grid">
@@ -99,7 +112,9 @@
 </template>
 
 <script setup lang="ts">
+import * as L from 'leaflet';
 import { ref, reactive } from 'vue';
+import { LMap, LTileLayer, LMarker } from '@vue-leaflet/vue-leaflet';
 import { locationPredictionApi, type StoreLocation, type PredictionResponse, type LocationAnalysisResult } from '../services/api';
 
 // State
@@ -189,6 +204,15 @@ const formatPercentage = (value: number): string => {
     maximumFractionDigits: 1
   }).format(value);
 };
+
+const mapZoom = ref(13);
+
+// Función para actualizar latitud y longitud al hacer click en el mapa
+function onMapClick(e: any) {
+  const { lat, lng } = e.latlng;
+  storeData.latitud = lat;
+  storeData.longitud = lng;
+}
 </script>
 
 <style scoped>
@@ -196,6 +220,12 @@ const formatPercentage = (value: number): string => {
   padding: 24px;
   max-width: 1200px;
   margin: 0 auto;
+}
+
+.l-map, .leaflet-container {
+  min-height: 300px !important;
+  min-width: 100% !important;
+  z-index: 1;
 }
 
 .store-location-predictor h2 {
@@ -399,6 +429,13 @@ const formatPercentage = (value: number): string => {
   height: 40px;
   animation: spin 1s linear infinite;
   margin-bottom: 16px;
+}
+
+.map-container {
+  margin-bottom: 24px;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
 }
 
 @keyframes spin {
